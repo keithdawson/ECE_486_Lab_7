@@ -25,13 +25,16 @@ typedef struct cache_Line{
 	unsigned int valid;
 	unsigned int tagSize;
 	unsigned int tag;
-	unsigned int referencedLine;
+	unsigned int lastReferencedLine;
+	unsigned int firstReferencedLine;
 	char data[14];
 } cacheLines;
 
+void runStartUp();
+
 int main() {
 	int continu = 1;
-	while(continu == 1) {
+	while (continu == 1) {
 		runStartUp();
 		cpuOutput *mmFile = readFile(fileName);
 		unsigned int operations = sizeof(mmFile) / sizeof(cpuOutput);
@@ -40,36 +43,81 @@ int main() {
 		unsigned int index = addressLines - offset - tagSize;
 		cacheLines *cacheLine;
 		cacheLine = malloc(cacheSize * sizeof(cacheLines));
-		for (int i = 0; i < cacheSize; i++) {
+		for (unsigned int i = 0; i < cacheSize; i++) {
 			cacheLine[i].blk = i;
 			cacheLine[i].dirty = 0;
 			cacheLine[i].valid = 0;
 			cacheLine[i].tagSize = tagSize;
 			cacheLine[i].tag = 0;
-			cacheLine[i].referencedLine = 0;
+			cacheLine[i].lastReferencedLine = 0;
+			cacheLine[i].firstReferencedLine = 0;
 			strcpy(cacheLine[i].data, "");
 		}
-		int numSets = index*index;
-		for (int i=0; i < references; i++) {
+		int numSets = index * index;
+		for (unsigned int i = 0; i < references; i++) {
 			mmFile[i].mmblk = mmFile[i].address / blockSize;
 			mmFile[i].cmset = mmFile[i].mmblk % numSets;
 			mmFile[i].tag = mmFile[i].address >> (offset + index);
 			mmFile[i].hitmiss = 0;
 			int checks = 0;
 			int cacheStartLine = mmFile[i].cmset * setSize;
-			if (mmFile[i].readWrite == 1){
-				while(setSize > checks){
-					if ((cacheLine[cacheStartLine+checks].valid == 1) && (cacheLine[cacheStartLine+checks].tag == mmFile[i].tag)){
+			if (mmFile[i].readWrite == 1) {
+				while (setSize > checks) {
+					if ((cacheLine[cacheStartLine + checks].valid == 1) &&
+						(cacheLine[cacheStartLine + checks].tag == mmFile[i].tag)) {
 						mmFile[i].hitmiss = 1;
-			}
-					else if ((setSize == checks) && (mmFile[i].hitmiss == 0)){
-					    cacheLine[cacheStartLine+checks].valid = 1;
-					    cacheLine[cacheStartLine+checks].tag = mmFile[i].tag;
-					    cacheLine[cacheStartLine+checks].referencedLine = i;
+						cacheLine[cacheStartLine + checks].lastReferencedLine = i;
+						break;
+					}
+					else if (setSize == checks){
+						for (unsigned int j=0; j<checks; j++){
+							if (cacheLine[cacheStartLine + j].valid == 0){
+								cacheLine[cacheStartLine + j].valid = 1;
+								cacheLine[cacheStartLine + j].tag = mmFile[i].tag;
+								cacheLine[cacheStartLine + j].firstReferencedLine = i;
+								cacheLine[cacheStartLine + j].lastReferencedLine = i;
+								mmFile[i].hitmiss = 0;
+								break;
+							}
+							else {
+								if (replacementPolicy == 'L'){
+									int LRU=0;
+									for (unsigned int k=0; k<checks; k++){
+										if (cacheLine[cacheStartLine + k].lastReferencedLine > LRU) LRU = k;
+									}
+									cacheLine[cacheStartLine + LRU].tag = mmFile[i].tag;
+									cacheLine[cacheStartLine + LRU].firstReferencedLine = i;
+									cacheLine[cacheStartLine + LRU].lastReferencedLine = i;
+									mmFile[i].hitmiss = 0;
+								}
+								else {
+									int FIFO=99999999;
+									for (unsigned int k=0; k<checks; k++){
+										if (cacheLine[cacheStartLine + k].firstReferencedLine < FIFO) FIFO = k;
+									}
+									cacheLine[cacheStartLine + FIFO].tag = mmFile[i].tag;
+									cacheLine[cacheStartLine + FIFO].firstReferencedLine = i;
+									cacheLine[cacheStartLine + FIFO].lastReferencedLine = i;
+								}
+
+							}
+						}
+					}
+					checks++;
+				}
+			} else {
+				while (setSize > checks) {
+					if ((cacheLine[cacheStartLine + checks].valid == 1) &&
+						(cacheLine[cacheStartLine + checks].tag == mmFile[i].tag)) {
+						mmFile[i].hitmiss = 1;
 					}
 				}
 			}
 		}
+		printf("Continue? (y = yes, n = no); ");
+		char *continueChar;
+		scanf(" %c", continueChar);
+		if (continueChar == "n") continu = 0;
 	}
 }
 
