@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <w32api/dbdaoint.h>
 
 //Global Vars
 //Read = 1 Write = 0
@@ -31,13 +30,15 @@ typedef struct cache_Line{
 } cacheLines;
 
 void runStartUp();
+cpuOutput * readFile(char * fileName);
+void output(cpuOutput *, cacheLines *);
 
-int main() {
+void main() {
 	int continu = 1;
 	while (continu == 1) {
 		runStartUp();
 		cpuOutput *mmFile = readFile(fileName);
-		unsigned int operations = sizeof(mmFile) / sizeof(cpuOutput);
+		//unsigned int operations = sizeof(mmFile) / sizeof(cpuOutput);             Probably don't need
 		unsigned int addressLines = log2(mainMemorySize), offset = log2(blockSize), tagSize = log2(
 				(cacheSize / setSize) / blockSize);
 		unsigned int index = addressLines - offset - tagSize;
@@ -105,11 +106,52 @@ int main() {
 					}
 					checks++;
 				}
-			} else {
+			}
+			else {
+				checks = 0;
 				while (setSize > checks) {
 					if ((cacheLine[cacheStartLine + checks].valid == 1) &&
 						(cacheLine[cacheStartLine + checks].tag == mmFile[i].tag)) {
 						mmFile[i].hitmiss = 1;
+						cacheLine[cacheStartLine + checks].dirty = 1;
+						cacheLine[cacheStartLine + checks].lastReferencedLine = i;
+						break;
+					}
+					else if (setSize == checks){
+						for (unsigned int j=0; j<checks; j++){
+							if (cacheLine[cacheStartLine + j].valid == 0){
+								cacheLine[cacheStartLine + j].valid = 1;
+								cacheLine[cacheStartLine + j].tag = mmFile[i].tag;
+								cacheLine[cacheStartLine + j].dirty = 1;
+								cacheLine[cacheStartLine + j].firstReferencedLine = i;
+								cacheLine[cacheStartLine + j].lastReferencedLine = i;
+								mmFile[i].hitmiss = 0;
+								break;
+							}
+							else{
+								if (replacementPolicy == 'L'){
+									int LRU=0;
+									for (unsigned int k=0; k<checks; k++){
+										if (cacheLine[cacheStartLine + k].lastReferencedLine > LRU) LRU = k;
+									}
+									cacheLine[cacheStartLine + LRU].tag = mmFile[i].tag;
+									cacheLine[cacheStartLine + LRU].dirty = 1;
+									cacheLine[cacheStartLine + LRU].firstReferencedLine = i;
+									cacheLine[cacheStartLine + LRU].lastReferencedLine = i;
+									mmFile[i].hitmiss = 0;
+								}
+								else {
+									int FIFO=99999999;
+									for (unsigned int k=0; k<checks; k++){
+										if (cacheLine[cacheStartLine + k].firstReferencedLine < FIFO) FIFO = k;
+									}
+									cacheLine[cacheStartLine + FIFO].tag = mmFile[i].tag;
+									cacheLine[cacheStartLine + FIFO].dirty = 1;
+									cacheLine[cacheStartLine + FIFO].firstReferencedLine = i;
+									cacheLine[cacheStartLine + FIFO].lastReferencedLine = i;
+								}
+							}
+                        }
 					}
 				}
 			}
@@ -119,6 +161,7 @@ int main() {
 		scanf(" %c", continueChar);
 		if (continueChar == "n") continu = 0;
 	}
+    return;
 }
 
 void runStartUp(){
