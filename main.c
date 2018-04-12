@@ -43,12 +43,13 @@ void main() {
         unsigned int addressLines = log2(mainMemorySize), offset = log2(blockSize), tagSize = log2(
                 (cacheSize / setSize) / blockSize);
         unsigned int index = addressLines - offset - tagSize, cacheSections = cacheSize / blockSize;
-        printf("Mark 2 %zu", sizeof(struct cache_Line));
-        printf("Mark 2.5");
-        cacheLineStruct* cacheLine = malloc(cacheSections * sizeof(*cacheLine));
-        printf("Mark 3");
+        printf("Mark 2 %d\n", (int) sizeof(cacheLineStruct));
+        printf("Mark 2.5\n");
+        //cacheLineStruct* cacheLine = malloc(cacheSections * sizeof(cacheLineStruct*));
+        cacheLineStruct cacheLine[cacheSections];
+        printf("Mark 3\n");
         for (unsigned int i = 0; i < cacheSections; i++) {
-            printf("Mark X");
+            printf("Mark X; i = %d\n", i);
             cacheLine[i].blk = i;
             cacheLine[i].dirty = 0;
             cacheLine[i].valid = 0;
@@ -58,14 +59,17 @@ void main() {
             cacheLine[i].firstReferencedLine = 0;
             strcpy(cacheLine[i].data, "");
         }
+        printf("Mark 4\n");
         int numSets = index * index;
         for (unsigned int i = 0; i < references; i++) {
+            printf("Mark Y; i = %d\n", i);
             mmFile[i].mmblk = mmFile[i].address / blockSize;
             mmFile[i].cmset = mmFile[i].mmblk % numSets;
             mmFile[i].tag = mmFile[i].address >> (offset + index);
             mmFile[i].hitmiss = 0;
             int checks = 0;
             int cacheStartLine = mmFile[i].cmset * setSize;
+            printf("Mark V; i = %d\n", i);
             if (mmFile[i].readWrite == 1) {
                 while (setSize > checks) {
                     if ((cacheLine[cacheStartLine + checks].valid == 1) &&
@@ -107,6 +111,7 @@ void main() {
                     }
                     checks++;
                 }
+                printf("Mark Z; i = %d\n", i);
             } else {
                 checks = 0;
                 while (setSize > checks) {
@@ -153,6 +158,7 @@ void main() {
                 }
             }
         }
+        printf("Mark End\n");
         output(mmFile, cacheLine, addressLines, offset, index, tagSize, cacheSections);
         printf("Continue? (y = yes, n = no); ");
         char *continueChar;
