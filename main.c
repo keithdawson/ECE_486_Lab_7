@@ -37,16 +37,12 @@ void main() {
 	while (continu == 1) {
         runStartUp();
         cpuOutput *mmFile = readFile(fileName);
-        //unsigned int operations = sizeof(mmFile) / sizeof(cpuOutput);             Probably don't need
         unsigned int addressLines = log2(mainMemorySize), offset = log2(blockSize), index = log2(
                 (cacheSize / blockSize) / setSize);
 		//printf("cacheSize = %d blockSize = %d setSize = %d index = %d\n", cacheSize, blockSize, setSize, index);
         unsigned int tagSize = addressLines - offset - index, cacheSections = cacheSize / blockSize;
-        //cacheLineStruct* cacheLine = malloc(cacheSections * sizeof(cacheLineStruct*));
         cacheLineStruct cacheLine[cacheSections];
-        //printf("Mark 3\n");
         for (unsigned int i = 0; i < cacheSections; i++) {
-            //printf("Mark X; i = %d\n", i);
             cacheLine[i].blk = i;
             cacheLine[i].dirty = 0;
             cacheLine[i].valid = 0;
@@ -56,7 +52,6 @@ void main() {
             cacheLine[i].firstReferencedLine = 0;
             strcpy(cacheLine[i].data, "");
         }
-        //printf("Mark 4\n");
 		int numSets = cacheSections / setSize;
 		for (unsigned int i = 0; i < references; i++) {
 			mmFile[i].mmblk = mmFile[i].address / blockSize;
@@ -225,7 +220,15 @@ void output(cpuOutput * mmFile, cacheLineStruct * cacheLine, int addressLines, i
 			printf("\n");
 		}
 		else{
-			printf("%d\t\t%s\n", cacheLine[i].tag, cacheLine[i].data);
+		    char tagOutput[8];
+		    unsigned int tag = cacheLine[i].tag;
+            for(int jk=0;jk<8;jk++) tagOutput[jk] = '\0';
+		    for(int l=0;l<tagSize;l++){
+		        if (tag % 2 == 0) tagOutput[tagSize - l - 1] = '0';
+		        else tagOutput[tagSize - l - 1] = '1';
+		        tag = tag / 2;
+		    }
+			printf("%s\t\t%s\n",tagOutput ,cacheLine[i].data);
 		}
 	}
 }
