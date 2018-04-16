@@ -179,10 +179,11 @@ void main() {
 
         //printf("Mark End\n");
         output(mmFile, cacheLine, addressLines, offset, index, tagSize, cacheSections);
-        printf("\nContinue? (y = yes, n = no); ");
-        char *continueChar;
-        scanf(" %c", continueChar);
-        if (continueChar == "n") continu = 0;
+		//runStartUp();
+		printf("\nContinue? (y = yes, n = no); ");
+        char continueChar;
+        scanf(" %c", &continueChar);
+        if (continueChar == 'n') continu = 0;
         runStartUp();
     }
 }
