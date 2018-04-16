@@ -57,7 +57,7 @@ void main() {
             strcpy(cacheLine[i].data, "");
         }
         //printf("Mark 4\n");
-		int numSets = index * index;
+		int numSets = cacheSections / setSize;
 		for (unsigned int i = 0; i < references; i++) {
 			mmFile[i].mmblk = mmFile[i].address / blockSize;
 			mmFile[i].cmset = mmFile[i].mmblk % numSets;
@@ -69,7 +69,7 @@ void main() {
             printf("NEXT LINE\nmmFile[i].readWrite = %d\nmm.address = %d\nmm.blk = %d\nmm.cmset = %d\nmm.tag = %d\nsetSize = %d\ncacheStartLine = %d\n", mmFile[i].readWrite, mmFile[i].address,mmFile[i].mmblk, mmFile[i].cmset, mmFile[i].tag, setSize, cacheStartLine);
             if (mmFile[i].readWrite == 1) {
 				for(int checks = 0;checks < setSize; checks++){
-					printf("cacheLine[%d].valid = %d; cacheLine[%d].tag = %d", cacheStartLine+checks, cacheLine[cacheStartLine + checks].valid, cacheStartLine+checks, cacheLine[cacheStartLine + checks].tag);
+					printf("cacheLine[%d].valid = %d; cacheLine[%d].tag = %d\n", cacheStartLine+checks, cacheLine[cacheStartLine + checks].valid, cacheStartLine+checks, cacheLine[cacheStartLine + checks].tag);
                     if ((cacheLine[cacheStartLine + checks].valid == 1) &&
                         (cacheLine[cacheStartLine + checks].tag == mmFile[i].tag)) {
                     	printf("Hit cache %d\n", cacheStartLine+checks);
@@ -79,7 +79,7 @@ void main() {
                     }
                     printf("setSize = %d and checks = %d\n", setSize, checks);
                     if (setSize == checks+1) {
-                    	printf("Mark NOW\n");
+                    	printf("Mark y\n");
                         for (unsigned int j = 0; j < checks+1; j++) {
                             if (cacheLine[cacheStartLine + j].valid == 0) {
                             	printf("Valid = 0 Miss cmblk %d\n", cacheStartLine+j);
@@ -183,6 +183,7 @@ void main() {
         char *continueChar;
         scanf(" %c", continueChar);
         if (continueChar == "n") continu = 0;
+        runStartUp();
     }
 }
 
@@ -196,7 +197,8 @@ void output(cpuOutput * mmFile, cacheLineStruct * cacheLine, int addressLines, i
     printf("main memory address\t\tmm blk #\tcm set #\tcm blk #\thit/miss\n---------------------------------------------------------------------\n");
     for(int i=0;i < references;i++){
     	printf("\t\t%d\t\t\t\t\t%d\t\t\t%d\t\t%d", mmFile[i].address, mmFile[i].mmblk, mmFile[i].cmset, mmFile[i].cmset*setSize);
-    	for(int j=1;j < setSize;j++) printf(" or %d", mmFile[i].cmset * setSize + j);
+    	if (setSize == 2) printf(" or %d", mmFile[i].cmset * setSize + 1);
+    	if (setSize > 2) printf(" to %d", mmFile[i].cmset * setSize + setSize - 1);
     	if (mmFile[i].hitmiss == 1) printf("\t\t\thit\n");
     	else printf("\t\t\tmiss\n");
     }
@@ -216,7 +218,8 @@ void output(cpuOutput * mmFile, cacheLineStruct * cacheLine, int addressLines, i
 		printf("\t%d\t\t\t\t%d\t\t\t\t%d\t\t", i, cacheLine[i].dirty, cacheLine[i].valid);
 		if (cacheLine[i].valid == 0){
 			for(int k=0;k<tagSize;k++) printf("x");
-			printf("\t\t\t");
+			if (tagSize < 4) printf("\t\t\t");
+			else printf("\t\t");
 			for(int k=0;k<tagSize;k++) printf("x");
 			printf("\n");
 		}
