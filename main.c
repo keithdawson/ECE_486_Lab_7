@@ -57,22 +57,22 @@ void main() {
             strcpy(cacheLine[i].data, "");
         }
         //printf("Mark 4\n");
-        int numSets = index * index;
+		int numSets = index * index;
+		for (unsigned int i = 0; i < references; i++) {
+			mmFile[i].mmblk = mmFile[i].address / blockSize;
+			mmFile[i].cmset = mmFile[i].mmblk % numSets;
+			mmFile[i].tag = mmFile[i].address >> (offset + index);
+			mmFile[i].hitmiss = 0;
+		}
         for (unsigned int i = 0; i < references; i++) {
-            mmFile[i].mmblk = mmFile[i].address / blockSize;
-            mmFile[i].cmset = mmFile[i].mmblk % numSets;
-            mmFile[i].tag = mmFile[i].address >> (offset + index);
-            mmFile[i].hitmiss = 0;
-            //int checks = 0;
             int cacheStartLine = mmFile[i].cmset * setSize;
-            printf("mmFile[i].readWrite = %d\nmm.address = %d\nmm.blk = %d\nmm.cmset = %d\nmm.tag = %d\nsetSize = %d\ncacheStartLine = %d\n", mmFile[i].readWrite, mmFile[i].address,mmFile[i].mmblk, mmFile[i].cmset, mmFile[i].tag, setSize, cacheStartLine);
+            printf("NEXT LINE\nmmFile[i].readWrite = %d\nmm.address = %d\nmm.blk = %d\nmm.cmset = %d\nmm.tag = %d\nsetSize = %d\ncacheStartLine = %d\n", mmFile[i].readWrite, mmFile[i].address,mmFile[i].mmblk, mmFile[i].cmset, mmFile[i].tag, setSize, cacheStartLine);
             if (mmFile[i].readWrite == 1) {
-            	printf("Mark ReadWrite 1\n");
 				for(int checks = 0;checks < setSize; checks++){
-					printf("CheckRun\n");
+					printf("cacheLine[%d].valid = %d; cacheLine[%d].tag = %d", cacheStartLine+checks, cacheLine[cacheStartLine + checks].valid, cacheStartLine+checks, cacheLine[cacheStartLine + checks].tag);
                     if ((cacheLine[cacheStartLine + checks].valid == 1) &&
                         (cacheLine[cacheStartLine + checks].tag == mmFile[i].tag)) {
-                    	printf("Hit\n");
+                    	printf("Hit cache %d\n", cacheStartLine+checks);
                         mmFile[i].hitmiss = 1;
                         cacheLine[cacheStartLine + checks].lastReferencedLine = i;
                         break;
@@ -80,17 +80,18 @@ void main() {
                     printf("setSize = %d and checks = %d\n", setSize, checks);
                     if (setSize == checks+1) {
                     	printf("Mark NOW\n");
-                        for (unsigned int j = 0; j < checks; j++) {
+                        for (unsigned int j = 0; j < checks+1; j++) {
                             if (cacheLine[cacheStartLine + j].valid == 0) {
-                            	printf("Valid 0 Miss\n");
+                            	printf("Valid = 0 Miss cmblk %d\n", cacheStartLine+j);
                                 cacheLine[cacheStartLine + j].valid = 1;
                                 cacheLine[cacheStartLine + j].tag = mmFile[i].tag;
                                 cacheLine[cacheStartLine + j].firstReferencedLine = i;
                                 cacheLine[cacheStartLine + j].lastReferencedLine = i;
+	                            sprintf(cacheLine[cacheStartLine + j].data, "mm blk # %d", mmFile[i].mmblk);
                                 mmFile[i].hitmiss = 0;
                                 break;
-                            } else {
-	                            printf("Mark replace; i = %d\n", i);
+                            } else if (j==checks){
+	                            printf("Mark replace; i = %d, cache = %d\n", i, cacheStartLine+checks);
                                 if (replacementPolicy == 'L') {
                                     int LRU = 0;
                                     for (unsigned int k = 0; k < checks; k++) {
@@ -99,6 +100,7 @@ void main() {
                                     cacheLine[cacheStartLine + LRU].tag = mmFile[i].tag;
                                     cacheLine[cacheStartLine + LRU].firstReferencedLine = i;
                                     cacheLine[cacheStartLine + LRU].lastReferencedLine = i;
+	                                sprintf(cacheLine[cacheStartLine + j].data, "mm blk # %d", mmFile[i].mmblk);
                                     mmFile[i].hitmiss = 0;
                                 } else {
                                     int FIFO = 99999999;
@@ -108,6 +110,8 @@ void main() {
                                     cacheLine[cacheStartLine + FIFO].tag = mmFile[i].tag;
                                     cacheLine[cacheStartLine + FIFO].firstReferencedLine = i;
                                     cacheLine[cacheStartLine + FIFO].lastReferencedLine = i;
+	                                sprintf(cacheLine[cacheStartLine + j].data, "mm blk # %d", mmFile[i].mmblk);
+	                                mmFile[i].hitmiss = 0;
                                 }
 
                             }
@@ -165,6 +169,7 @@ void main() {
                 }
             }
         }
+
         //printf("Mark End\n");
         output(mmFile, cacheLine, addressLines, offset, index, tagSize, cacheSections);
         printf("\nContinue? (y = yes, n = no); ");
@@ -198,7 +203,7 @@ void output(cpuOutput * mmFile, cacheLineStruct * cacheLine, int addressLines, i
     float hitsF = hits, hitsPossF = hitsPoss, referencesF = references;
 	printf("\n\nHighest possible hit rate = %d/%d = %2.0f%%\n", hitsPoss, references, hitsPossF/referencesF*100.0);
 	printf("Actual hit rate = %d/%d = %2.0f%%\n\n", hits, references, hitsF/referencesF*100.0);
-	printf("Final \"status\" of the cache:\nCache blk #\t\tdirty bit\t\tvalid bit\ttag\t\tData\n");
+	printf("Final \"status\" of the cache:\nCache blk #\t\tdirty bit\t\tvalid bit\ttag\t\t\tData\n");
 	printf("--------------------------------------------------------\n");
 	for(int i=0;i < cacheSize/blockSize;i++){
 		printf("\t%d\t\t\t\t%d\t\t\t\t%d\t\t", i, cacheLine[i].dirty, cacheLine[i].valid);
@@ -209,7 +214,7 @@ void output(cpuOutput * mmFile, cacheLineStruct * cacheLine, int addressLines, i
 			printf("\n");
 		}
 		else{
-			printf("%d\t%s\n", cacheLine[i].tag, cacheLine[i].data);
+			printf("%d\t\t%s\n", cacheLine[i].tag, cacheLine[i].data);
 		}
 	}
 }
