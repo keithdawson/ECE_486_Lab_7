@@ -90,8 +90,8 @@ void main() {
 								if (replacementPolicy == 'L') {
 									int LRU = 99999999;
 									for (unsigned int k = 0; k <= checks; k++) {
-										printf("LRU = %d: last Referenced line = %d\n", LRU, cacheLine[cacheStartLine + k].lastReferencedLine);
-										if (cacheLine[cacheStartLine + k].lastReferencedLine < LRU) LRU = k;
+										if (cacheLine[cacheStartLine + k].lastReferencedLine < cacheLine[cacheStartLine + LRU].lastReferencedLine) LRU = k;
+                                        printf("LRU = %d: last Referenced line = %d\n", LRU, cacheLine[cacheStartLine + k].lastReferencedLine);
 									}
 									cacheLine[cacheStartLine + LRU].tag = mmFile[i].tag;
 									cacheLine[cacheStartLine + LRU].firstReferencedLine = i;
@@ -102,9 +102,9 @@ void main() {
 								} else {
 									int FIFO = 99999999;
 									for (unsigned int k = 0; k <= checks; k++) {
-										printf("FIFO = %d: first Referenced line = %d\n", FIFO, cacheLine[cacheStartLine + k].lastReferencedLine);
-										if (cacheLine[cacheStartLine + k].firstReferencedLine < FIFO) FIFO = k;
-									}
+										if (cacheLine[cacheStartLine + k].firstReferencedLine < cacheLine[cacheStartLine + FIFO].firstReferencedLine) FIFO = k;
+                                        printf("FIFO = %d: first Referenced line = %d\n", FIFO, cacheLine[cacheStartLine + k].firstReferencedLine);
+                                    }
 									cacheLine[cacheStartLine + FIFO].tag = mmFile[i].tag;
 									cacheLine[cacheStartLine + FIFO].firstReferencedLine = i;
 									cacheLine[cacheStartLine + FIFO].lastReferencedLine = i;
@@ -147,9 +147,9 @@ void main() {
 								if (replacementPolicy == 'L') {
 									int LRU = 99999999;
 									for (unsigned int k = 0; k <= checks; k++) {
-										printf("LRU = %d: last Referenced line = %d\n", LRU, cacheStartLine + k);
-										if (cacheLine[cacheStartLine + k].lastReferencedLine < LRU) LRU = k;
-									}
+										if (cacheLine[cacheStartLine + k].lastReferencedLine < cacheLine[cacheStartLine + LRU].lastReferencedLine) LRU = k;
+                                        printf("LRU = %d: last Referenced line = %d\n", LRU, cacheStartLine + k);
+                                    }
 									cacheLine[cacheStartLine + LRU].tag = mmFile[i].tag;
 									cacheLine[cacheStartLine + LRU].dirty = 1;
 									cacheLine[cacheStartLine + LRU].firstReferencedLine = i;
@@ -160,7 +160,7 @@ void main() {
 									int FIFO = 99999999;
 									for (unsigned int k = 0; k <= checks; k++) {
 										printf("FIFO = %d: first Referenced line = %d\n", FIFO, cacheStartLine + k);
-										if (cacheLine[cacheStartLine + k].firstReferencedLine < FIFO) FIFO = k;
+										if (cacheLine[cacheStartLine + k].firstReferencedLine < cacheLine[cacheStartLine + FIFO].firstReferencedLine) FIFO = k;
 									}
 									cacheLine[cacheStartLine + FIFO].tag = mmFile[i].tag;
 									cacheLine[cacheStartLine + FIFO].dirty = 1;
