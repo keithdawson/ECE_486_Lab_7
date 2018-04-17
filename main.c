@@ -88,7 +88,7 @@ void main() {
 							} else if (j==checks){
 								printf("Mark replace; i = %d, cache = %d\n", i, cacheStartLine+checks);
 								if (replacementPolicy == 'L') {
-									int LRU = 99999999;
+									int LRU = 0;
 									for (unsigned int k = 0; k <= checks; k++) {
 										if (cacheLine[cacheStartLine + k].lastReferencedLine < cacheLine[cacheStartLine + LRU].lastReferencedLine) LRU = k;
                                         printf("LRU = %d: last Referenced line = %d\n", LRU, cacheLine[cacheStartLine + k].lastReferencedLine);
@@ -100,7 +100,7 @@ void main() {
 									sprintf(cacheLine[cacheStartLine + LRU].data, "mm blk # %d", mmFile[i].mmblk);
 									mmFile[i].hitmiss = 0;
 								} else {
-									int FIFO = 99999999;
+									int FIFO = 0;
 									for (unsigned int k = 0; k <= checks; k++) {
 										if (cacheLine[cacheStartLine + k].firstReferencedLine < cacheLine[cacheStartLine + FIFO].firstReferencedLine) FIFO = k;
                                         printf("FIFO = %d: first Referenced line = %d\n", FIFO, cacheLine[cacheStartLine + k].firstReferencedLine);
@@ -145,7 +145,7 @@ void main() {
 							} else if (j==checks){
 								printf("Mark Write replace; i = %d\n", i);
 								if (replacementPolicy == 'L') {
-									int LRU = 99999999;
+									int LRU = 0;
 									for (unsigned int k = 0; k <= checks; k++) {
 										if (cacheLine[cacheStartLine + k].lastReferencedLine < cacheLine[cacheStartLine + LRU].lastReferencedLine) LRU = k;
                                         printf("LRU = %d: last Referenced line = %d\n", LRU, cacheStartLine + k);
@@ -157,7 +157,7 @@ void main() {
 									sprintf(cacheLine[cacheStartLine + LRU].data, "mm blk # %d", mmFile[i].mmblk);
 									mmFile[i].hitmiss = 0;
 								} else {
-									int FIFO = 99999999;
+									int FIFO = 0;
 									for (unsigned int k = 0; k <= checks; k++) {
 										printf("FIFO = %d: first Referenced line = %d\n", FIFO, cacheStartLine + k);
 										if (cacheLine[cacheStartLine + k].firstReferencedLine < cacheLine[cacheStartLine + FIFO].firstReferencedLine) FIFO = k;
